@@ -1,0 +1,6 @@
+{
+  "ignore_keywords": [
+    "kubernetes",
+    "github"
+  ]
+}

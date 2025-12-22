@@ -1,0 +1,3 @@
+{
+    "mcp-servers": ["aws","docling","bitbucket", "context7", "postgres","filesystem"]
+}

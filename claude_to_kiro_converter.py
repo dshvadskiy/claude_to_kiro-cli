@@ -23,7 +23,48 @@ class ClaudeToKiroConverter:
         self.source_dir = Path(source_dir)
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.allowed_mcps = self.load_allowed_mcps()
+        self.ignore_keywords = self.load_ignore_keywords()
         
+    def load_ignore_keywords(self) -> set:
+        """Load ignore keywords from ignore_keywords.json."""
+        ignore_file = Path("ignore_keywords.json")
+        if ignore_file.exists():
+            try:
+                with open(ignore_file) as f:
+                    data = json.load(f)
+                    return set(keyword.lower() for keyword in data.get("ignore_keywords", []))
+            except Exception as e:
+                print(f"Warning: Could not load ignore_keywords.json: {e}")
+        return set()
+    
+    def filter_text_by_keywords(self, text: str) -> str:
+        """Remove lines containing ignore keywords."""
+        if not text or not self.ignore_keywords:
+            return text
+        
+        lines = text.split('\n')
+        filtered_lines = []
+        
+        for line in lines:
+            line_lower = line.lower()
+            if not any(keyword in line_lower for keyword in self.ignore_keywords):
+                filtered_lines.append(line)
+        
+        return '\n'.join(filtered_lines)
+    
+    def load_allowed_mcps(self) -> set:
+        """Load allowed MCP servers from allowed_mcps.json."""
+        allowed_file = Path("allowed_mcps.json")
+        if allowed_file.exists():
+            try:
+                with open(allowed_file) as f:
+                    data = json.load(f)
+                    return set(data.get("allowed_servers", []))
+            except Exception as e:
+                print(f"Warning: Could not load allowed_mcps.json: {e}")
+        return set()
+    
     def parse_frontmatter(self, content: str) -> tuple[Optional[Dict], str]:
         """Extract YAML frontmatter from markdown."""
         frontmatter_pattern = r'^---\s*\n(.*?)\n---\s*\n(.*)$'
@@ -93,12 +134,14 @@ class ClaudeToKiroConverter:
         return list(set(allowed))
     
     def extract_mcp_servers(self, content: str, frontmatter: Optional[Dict]) -> Dict[str, Any]:
-        """Extract MCP server configurations."""
+        """Extract MCP server configurations, filtered by allowed list."""
         mcps = {}
         
         # Check frontmatter
         if frontmatter and 'mcpServers' in frontmatter:
-            mcps.update(frontmatter['mcpServers'])
+            for server_name, config in frontmatter['mcpServers'].items():
+                if server_name in self.allowed_mcps:
+                    mcps[server_name] = config
         
         # Infer from content
         mcp_keywords = {
@@ -108,6 +151,37 @@ class ClaudeToKiroConverter:
             'kubernetes': {'command': 'npx', 'args': ['-y', '@kubernetes/mcp-server']},
             'postgres': {'command': 'npx', 'args': ['-y', '@modelcontextprotocol/server-postgres']},
             'slack': {'command': 'npx', 'args': ['-y', '@modelcontextprotocol/server-slack']},
+            'filesystem': {'command': 'npx', 'args': ['-y', '@modelcontextprotocol/server-filesystem']},
+            'brave-search': {'command': 'npx', 'args': ['-y', '@modelcontextprotocol/server-brave-search']},
+            'memory': {'command': 'npx', 'args': ['-y', '@modelcontextprotocol/server-memory']},
+            'everything': {'command': 'npx', 'args': ['-y', '@modelcontextprotocol/server-everything']},
+        }
+        
+        content_lower = content.lower()
+        for keyword, config in mcp_keywords.items():
+            if keyword in content_lower and keyword not in mcps and keyword in self.allowed_mcps:
+                mcps[keyword] = config
+        
+        return mcps
+    
+    def extract_mcp_servers_unfiltered(self, content: str, frontmatter: Optional[Dict]) -> Dict[str, Any]:
+        """Extract all MCP servers without filtering (for comparison)."""
+        mcps = {}
+        
+        if frontmatter and 'mcpServers' in frontmatter:
+            mcps.update(frontmatter['mcpServers'])
+        
+        mcp_keywords = {
+            'github': {'command': 'npx', 'args': ['-y', '@modelcontextprotocol/server-github']},
+            'gitlab': {'command': 'npx', 'args': ['-y', '@modelcontextprotocol/server-gitlab']},
+            'aws': {'command': 'npx', 'args': ['-y', '@aws/mcp-server']},
+            'kubernetes': {'command': 'npx', 'args': ['-y', '@kubernetes/mcp-server']},
+            'postgres': {'command': 'npx', 'args': ['-y', '@modelcontextprotocol/server-postgres']},
+            'slack': {'command': 'npx', 'args': ['-y', '@modelcontextprotocol/server-slack']},
+            'filesystem': {'command': 'npx', 'args': ['-y', '@modelcontextprotocol/server-filesystem']},
+            'brave-search': {'command': 'npx', 'args': ['-y', '@modelcontextprotocol/server-brave-search']},
+            'memory': {'command': 'npx', 'args': ['-y', '@modelcontextprotocol/server-memory']},
+            'everything': {'command': 'npx', 'args': ['-y', '@modelcontextprotocol/server-everything']},
         }
         
         content_lower = content.lower()
@@ -130,7 +204,7 @@ class ClaudeToKiroConverter:
             kiro_agent = {
                 "name": agent_name,
                 "description": "",
-                "prompt": body.strip(),
+                "prompt": self.filter_text_by_keywords(body.strip()),
                 "tools": ["*"],  # Start with all tools
                 "allowedTools": [],
                 "mcpServers": {},
@@ -139,7 +213,8 @@ class ClaudeToKiroConverter:
             
             # Extract from frontmatter if available
             if frontmatter:
-                kiro_agent["description"] = frontmatter.get('description', '')
+                description = frontmatter.get('description', '')
+                kiro_agent["description"] = self.filter_text_by_keywords(description)
                 
                 # Map Claude Code fields to Kiro
                 if 'model' in frontmatter:
@@ -156,7 +231,8 @@ class ClaudeToKiroConverter:
                 # Try to get first line or paragraph as description
                 first_para = body.strip().split('\n\n')[0]
                 if len(first_para) < 200:
-                    kiro_agent["description"] = first_para.strip('#').strip()
+                    filtered_desc = self.filter_text_by_keywords(first_para.strip('#').strip())
+                    kiro_agent["description"] = filtered_desc
             
             # Extract and configure tools
             mentioned_tools = self.extract_tools_from_content(content)
@@ -200,13 +276,16 @@ class ClaudeToKiroConverter:
             'total': 0,
             'converted': 0,
             'failed': 0,
-            'agents': []
+            'agents': [],
+            'filtered_mcps': 0
         }
         
         agent_files = self.find_agent_files()
         stats['total'] = len(agent_files)
         
         print(f"Found {len(agent_files)} agent files")
+        print(f"Allowed MCP servers: {sorted(self.allowed_mcps)}")
+        print(f"Ignore keywords: {sorted(self.ignore_keywords)}")
         
         for agent_path in agent_files:
             print(f"Converting: {agent_path.name}")
@@ -214,6 +293,18 @@ class ClaudeToKiroConverter:
             kiro_agent = self.convert_agent(agent_path)
             
             if kiro_agent:
+                # Count filtered MCPs
+                original_mcps = self.extract_mcp_servers_unfiltered(
+                    agent_path.read_text(), 
+                    self.parse_frontmatter(agent_path.read_text())[0]
+                )
+                filtered_count = len(original_mcps) - len(kiro_agent['mcpServers'])
+                stats['filtered_mcps'] += filtered_count
+                
+                if filtered_count > 0:
+                    filtered_names = set(original_mcps.keys()) - set(kiro_agent['mcpServers'].keys())
+                    print(f"  ! Filtered {filtered_count} MCP server(s): {', '.join(filtered_names)}")
+                
                 output_path = self.output_dir / f"{kiro_agent['name']}.json"
                 
                 if not dry_run:
@@ -334,6 +425,7 @@ def main():
     print(f"Total agents found: {stats['total']}")
     print(f"Successfully converted: {stats['converted']}")
     print(f"Failed: {stats['failed']}")
+    print(f"MCP servers filtered: {stats['filtered_mcps']}")
     
     if args.create_index and not args.dry_run:
         print(f"\nCreating index...")
