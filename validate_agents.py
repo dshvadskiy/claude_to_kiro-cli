@@ -72,7 +72,7 @@ def main():
     parser.add_argument(
         "--agents-dir", 
         type=Path, 
-        default=Path.home() / ".kiro" / "agents",
+        default=Path(".kiro/agents"),
         help="Directory containing agent JSON files"
     )
     parser.add_argument(

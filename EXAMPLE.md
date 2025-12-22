@@ -2,7 +2,7 @@
 
 ## Before: Claude Code Agent Format
 
-**File:** `plugins/python-development/agents/python-expert.md`
+**File:** `plugins/python-development/agents/python-pro.md`
 
 ```markdown
 ---
@@ -54,11 +54,11 @@ When reviewing code, focus on:
 
 ## After: Kiro CLI Agent Format
 
-**File:** `~/.kiro/agents/python-expert.json`
+**File:** `~/.kiro/agents/python-pro.json`
 
 ```json
 {
-  "name": "python-expert",
+  "name": "python-pro",
   "description": "Expert Python developer specializing in modern Python patterns, async programming, and best practices",
   "model": "anthropic/claude-sonnet-4",
   "temperature": 0.3,
@@ -154,17 +154,17 @@ Placeholder for documentation files:
 ### Claude Code
 ```bash
 # In Claude Code IDE
-@python-expert write a FastAPI endpoint for user authentication
+@python-pro write a FastAPI endpoint for user authentication
 ```
 
 ### Kiro CLI
 ```bash
 # Interactive
-kiro-cli chat --agent python-expert
+kiro-cli chat --agent python-pro
 > write a FastAPI endpoint for user authentication
 
 # One-shot
-kiro-cli chat --agent python-expert "write a FastAPI endpoint for user authentication"
+kiro-cli chat --agent python-pro "write a FastAPI endpoint for user authentication"
 ```
 
 ---
@@ -249,20 +249,20 @@ You are a DevOps engineer expert in AWS, Kubernetes, Terraform, and CI/CD pipeli
 
 ```bash
 # 1. List the agent
-kiro-cli agent list | grep python-expert
+kiro-cli agent list | grep python-pro
 
 # 2. Validate the JSON
-kiro-cli agent validate ~/.kiro/agents/python-expert.json
+kiro-cli agent validate ~/.kiro/agents/python-pro.json
 
 # 3. Test the agent
-kiro-cli chat --agent python-expert "Show me how to use asyncio.gather"
+kiro-cli chat --agent python-pro "Show me how to use asyncio.gather"
 
 # 4. Check tool permissions
-kiro-cli chat --agent python-expert "Run pytest"
+kiro-cli chat --agent python-pro "Run pytest"
 # Should auto-approve (in allowedTools)
 
 # 5. Check hook activation
-kiro-cli chat --agent python-expert "Create a hello.py file with a print statement"
+kiro-cli chat --agent python-pro "Create a hello.py file with a print statement"
 # Should auto-format with black after writing
 ```
 

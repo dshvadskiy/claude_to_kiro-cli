@@ -5,11 +5,6 @@
 ```bash
 # One-command setup (recommended)
 ./setup.sh
-
-# Manual setup
-pip install pyyaml
-git clone https://github.com/wshobson/agents.git
-python claude_to_kiro_converter.py --source ./agents --create-index
 ```
 
 ---

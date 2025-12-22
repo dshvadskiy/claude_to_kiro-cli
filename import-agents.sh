@@ -60,7 +60,7 @@ fi
 echo ""
 
 # Ask for output directory
-DEFAULT_OUTPUT="$HOME/.kiro/agents"
+DEFAULT_OUTPUT=".kiro/agents"
 echo "📂 Output directory for converted agents"
 echo "   Default: $DEFAULT_OUTPUT"
 read -p "   Use default? (Y/n): " -n 1 -r
