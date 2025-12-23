@@ -10,3 +10,6 @@ wheels/
 .venv
 wshobson-agents/
 .kiro
+converted-powers/
+nested/
+test-skill/

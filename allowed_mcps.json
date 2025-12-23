@@ -1,3 +1,12 @@
 {
-    "mcp-servers": ["aws","docling","bitbucket", "context7", "postgres","filesystem"]
+  "allowed_servers": [
+    "aws",
+    "filesystem",
+    "brave-search",
+    "memory",
+    "everything",
+    "docling",
+    "bitbucket",
+    "context7"
+  ]
 }
