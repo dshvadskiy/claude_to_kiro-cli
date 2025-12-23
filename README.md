@@ -183,6 +183,47 @@ kiro-cli agent edit python-pro
 kiro-cli agent set-default python-pro
 ```
 
+## Skills Conversion
+
+Convert Anthropic Skills format to Kiro Powers format with automatic keyword extraction and directory restructuring.
+
+### Converting Skills to Powers
+
+```bash
+# Preview conversion
+python3 skills_to_kiro_powers_converter.py --source ./skills --dry-run
+
+# Convert skills to powers
+python3 skills_to_kiro_powers_converter.py --source ./skills --output ./powers
+```
+
+### What Gets Converted
+
+**From Anthropic Skill:**
+```
+my-skill/
+├── SKILL.md          # Required
+├── examples.md       # Optional
+└── reference.md      # Optional
+```
+
+**To Kiro Power:**
+```
+power-react-component-generator/
+├── POWER.md          # Converted main file
+└── steering/         # Additional files moved here
+    ├── examples.md
+    └── reference.md
+```
+
+### Key Transformations
+
+- **File Rename**: `SKILL.md` → `POWER.md`
+- **Frontmatter Enhancement**: Adds `displayName` and auto-generated `keywords`
+- **Directory Structure**: Additional files moved to `steering/` directory
+- **Name Normalization**: Converts to kebab-case format
+
+
 ## Output Structure
 
 ```
@@ -193,7 +234,7 @@ kiro-cli agent set-default python-pro
 ├── kubernetes-architect.json
 ├── security-auditor.json
 └── ... (99 total agents)
-```
+
 
 ### agents_index.md Structure
 

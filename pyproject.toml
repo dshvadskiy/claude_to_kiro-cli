@@ -1,7 +1,7 @@
 [project]
 name = "claude-to-kiro-cli"
 version = "0.1.0"
-description = "Add your description here"
+description = "Converts Claude agents and Skills into Kiro compatible format"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
